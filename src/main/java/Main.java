@@ -57,7 +57,7 @@ public class Main extends JFrame {
 
 	public void drawPoint(int _x, int _y){
 		Graphics g = canvas.getGraphics();
-		g.drawOval(_x, _y, 2, 2);
+		g.drawOval(_x, _y, 8, 8);
 	}
 
 	/**
