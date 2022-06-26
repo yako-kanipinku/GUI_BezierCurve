@@ -8,7 +8,6 @@ import java.awt.Canvas;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,10 +35,13 @@ public class Main extends JFrame {
 					@Override
 					public void mouseClicked(MouseEvent e) {
 						if(m_controlPoints.size() < 4){
-							drawPoint(e.getX(),e.getY());
-							m_controlPoints.add(e.getPoint());
+							drawPoint(e.getX(),e.getY()); //点を打つ.
+							Point point = Point.create((double)e.getX(), (double)e.getY()); //点を生成.
+							m_controlPoints.add(point); //打った点を制御点として追加.
 							if(m_controlPoints.size() == 3){
+								clean();
 								drawBezierCurve();
+								m_controlPoints.remove(0); //配列で一番古い点を取り除く.
 							}
 						}
 					}
@@ -65,23 +67,36 @@ public class Main extends JFrame {
 	 * @param _x x座標
 	 * @param _y y座標
 	 */
-
 	public void drawPoint(int _x, int _y){
 		Graphics g = canvas.getGraphics();
-		g.drawOval(_x, _y, 8, 8);
+		g.drawOval(_x-4, _y-4, 8, 8);
 	}
 
-	public void drawLine(int _x, int _y, int _x2, int _y2){
+	/**
+	 * 点と点を繋げるための処理.
+	 */
+	public void drawLine(double _x, double _y, double _x2, double _y2){
 		Graphics g = canvas.getGraphics();
-		g.drawLine(_x, _y, _x2, _y2);
+		g.drawLine((int)_x, (int)_y, (int)_x2, (int)_y2);
 	}
 
+	/**
+	 * 画面を一度リセットする.
+	 */
+	public void clean(){
+		Graphics g = canvas.getGraphics();
+		g.clearRect(0, 0, 800, 600);
+	}
+
+	/**
+	 * 2次有理ベジェ曲線を描くメソッド.
+	 */
 	public void drawBezierCurve(){
 		BezierCurve BC = BezierCurve.create(m_controlPoints);
-		java.awt.Point a = BC.evaluate(0.0);
-		for(double i=0.01; i<1.0; i+=0.01){
-			java.awt.Point b = BC.evaluate(i);
-			drawLine(a.x,a.y,b.x,b.y);
+		Point a = BC.evaluate(0.0);
+		for(double i=0.0001; i<1.0; i+=0.0001){
+			Point b = BC.evaluate(i);
+			drawLine(a.getX(), a.getY(), b.getX(), b.getY());
 			a = b;
 		}
 	}
@@ -92,8 +107,7 @@ public class Main extends JFrame {
 
 	public static void main(String[] args){ new Main(); }
 
-	private Canvas canvas = new Canvas();
-	private List<java.awt.Point> m_controlPoints = new ArrayList<>();
-
+	private final Canvas canvas = new Canvas();
+	private List<Point> m_controlPoints = new ArrayList<>();
 }
 

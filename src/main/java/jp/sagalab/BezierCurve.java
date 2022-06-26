@@ -1,5 +1,8 @@
 package jp.sagalab;
 
+import java.awt.*;
+import java.util.List;
+
 /**
  * n次のBezier曲線を表す.
  */
@@ -9,11 +12,16 @@ public class BezierCurve {
 	 * 制御点列を指定してBezier曲線オブジェクトを生成する.
 	 * @param _controlPoints 制御点列
 	 */
-	public BezierCurve(java.util.List<java.awt.Point> _controlPoints){
+	public BezierCurve(List<Point> _controlPoints){
 		m_controlPoints = _controlPoints;
 	}
 
-	public static BezierCurve create(java.util.List<java.awt.Point> _controlPoints){
+	/**
+	 * 2次有理ベジェ曲線を生成するファクトリーメソッド
+	 * @param _controlPoints 制御点列
+	 * @return 2次有理ベジェ曲線
+	 */
+	public static BezierCurve create(List<Point> _controlPoints){
 		return new BezierCurve(_controlPoints);
 	}
 
@@ -23,26 +31,32 @@ public class BezierCurve {
 	 * @param _t 閉区間[0,1]内のパラメータ
 	 * @return パラメータtに対応する評価点
 	 */
-	public java.awt.Point evaluate(Double _t){
-		Double x = 0.0;
-		Double y = 0.0;
+	public Point evaluate(Double _t){
+		double denominator = 0.0;
+		double x = 0.0;
+		double y = 0.0;
+		double[] w = w_create(c_w);
 		final Integer n = getDegree();
 
-		for(int i = 0; i<=n; ++i){
-			Double bernstein = bernsteinBasisPolynomial(n, i, _t);
-
-			x += m_controlPoints.get(i).getX()*bernstein;
-			y += m_controlPoints.get(i).getY()*bernstein;
+		for(int i = 0; i <= n; i++) {
+			denominator += w[i] * bernsteinBasisPolynomial(n, i, _t);
 		}
-
-		return new java.awt.Point(x.intValue(), y.intValue());
+		if(denominator==0){
+			return Point.create(0.0,0.0);
+		} else {
+			for (int i = 0; i <= n; i++) {
+				x += w[i] * m_controlPoints.get(i).getX() * bernsteinBasisPolynomial(n, i, _t);
+				y += w[i] * m_controlPoints.get(i).getY() * bernsteinBasisPolynomial(n, i, _t);
+			}
+			return Point.create(x/denominator,y/denominator);
+		}
 	}
 
 	/**
 	 * 制御点列を取得する.
 	 * @return 制御点列
 	 */
-	public java.util.List<java.awt.Point> getControlPoints(){
+	public List<Point> getControlPoints(){
 		return m_controlPoints;
 	}
 
@@ -55,7 +69,7 @@ public class BezierCurve {
 	}
 
 	/** 制御点列 */
-	private java.util.List<java.awt.Point> m_controlPoints;
+	private List<Point> m_controlPoints;
 
 	/**
 	 * バーンスタイン基底関数の実装.
@@ -65,7 +79,7 @@ public class BezierCurve {
 	 * @return  バーンスタイン基底関数の値
 	 */
 	private java.lang.Double bernsteinBasisPolynomial(java.lang.Integer _n, java.lang.Integer _i, java.lang.Double _t){
-		java.lang.Integer binomialCoeff = binomialCoefficient(_n, _i);
+		double binomialCoeff = binomialCoefficient(_n, _i);
 		double x = Math.pow(1.0-_t, _n-_i);
 		double y = Math.pow(_t, _i);
 		double z = binomialCoeff * x * y;
@@ -93,5 +107,36 @@ public class BezierCurve {
 		return factorial(_n)/(factorial(_i)*factorial(_n-_i));
 	}
 
+	/**
+	 * c_wの値を取得する.
+	 * @return c_w(w[1])の値
+	 */
+	private static double getW(){
+		return c_w;
+	}
+
+	/**
+	 * 各制御点の重みを生成.
+	 * ただし、w[0]=w[2]=1.0, w[1]=c_w とする
+	 * @param _w w[1]の重み
+	 * @return w[]の配列
+	 */
+	public double[] w_create(double _w) {
+		int n = m_controlPoints.size();
+		double[] w = new double[n];
+		for (int i = 0; i < n; i++) {
+			if (i == 0 || i == n - 1) {
+				w[i] = 1.0;
+			} else {
+				w[i] = _w;
+			}
+		}
+		return w;
+	}
+
+	/**
+	 * c_w(w[1])の重み
+	 */
+	private static double c_w = 1.0;
 }
 
